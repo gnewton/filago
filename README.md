@@ -2,6 +2,14 @@
 Monitor open files (via /proc/pid) of a process.
 Lists time when it first sees the file open, and when it is no longer open.
 
+
+## Building
+```
+$ git clone https://github.com/gnewton/filago.git
+$ cd filago
+$ go build
+```
+
 Usage: filago <pid>
 
 Sample output (tab separated):
