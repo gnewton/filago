@@ -36,3 +36,6 @@ $ filago 1792
 2017-04-06T00:14:28.229087-04:00	close	/home/bsmith/work/flogg/main.go
 
 ```
+
+## Caveat
+`filago` checks every 10 milliseconds, so can miss open/closes smaller than this granularity.
