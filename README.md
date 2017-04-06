@@ -7,7 +7,7 @@ Usage: filago <pid>
 Sample output (tab separated):
 
 ```
-# filago 1792
+$ filago 1792
 2017-04-06T00:08:57.959133-04:00	open	/home/bsmith/.xsession-errors
 2017-04-06T00:09:00.519095-04:00	open	/usr/share/emacs/24.5/etc/images/icons/hicolor/scalable/apps/emacs.svg
 2017-04-06T00:09:00.529033-04:00	close	/usr/share/emacs/24.5/etc/images/icons/hicolor/scalable/apps/emacs.svg
