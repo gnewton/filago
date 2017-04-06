@@ -4,7 +4,7 @@ Lists time when it first sees the file open, and when it is no longer open.
 
 Usage: filago <pid>
 
-Sample output:
+Sample output (tab separated):
 
 ```
 # filago 1792
