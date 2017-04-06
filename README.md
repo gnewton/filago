@@ -10,7 +10,12 @@ $ cd filago
 $ go build
 ```
 
-Usage: filago <pid>
+###Usage:
+```
+$ filago pid
+```
+
+###Output
 
 Sample output (tab separated):
 
