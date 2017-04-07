@@ -1,6 +1,7 @@
 package main
 
-// See https://github.com/marpie/go-mjpeg
+// Author: Glen Newton
+// BSD 3-Clause License
 
 import (
 	"fmt"
@@ -36,8 +37,6 @@ func main() {
 	if !exists {
 		return
 	}
-	//fmt.Println(pid)
-
 	c := make(chan []string)
 	go getOpenFiles(pidDevDir, c)
 
@@ -51,6 +50,7 @@ func main() {
 		for i, _ := range openFiles {
 			presentlyOpenFiles[openFiles[i]] = struct{}{}
 		}
+
 		//Find files no longer open
 		toBeRemoved := make([]string, 0)
 		for f, _ := range prevOpenFiles {
@@ -58,13 +58,14 @@ func main() {
 				toBeRemoved = append(toBeRemoved, f)
 			}
 		}
-		// Remove files no longer open
+
+		// Remove files no longer open & print them out
 		for i, _ := range toBeRemoved {
 			delete(prevOpenFiles, toBeRemoved[i])
 			fmt.Printf("%s\tclose\t%s\n", t.Format("2006-01-02T15:04:05.999999-07:00"), toBeRemoved[i])
 		}
 
-		// Add new files that have been opend
+		// Add new files that have been opened & print them out
 		for i, _ := range openFiles {
 			of := openFiles[i]
 			presentlyOpenFiles[of] = struct{}{}
@@ -82,6 +83,7 @@ func main() {
 }
 
 func usage() {
+	// FIXX
 	fmt.Println("usage")
 }
 
@@ -117,14 +119,10 @@ func getOpenFiles(d string, c chan []string) {
 		files, _ := ioutil.ReadDir(fdDir)
 		openFiles := make([]string, 0)
 		for _, f := range files {
-			//info, err := os.Lstat(fdDir + "/" + f.Name())
 			fullName := fdDir + "/" + f.Name()
 
 			realFile, err := os.Readlink(fullName)
 			if err != nil {
-				//close(c)
-				//log.Fatal(err)
-				// It may no longer be open
 				continue
 			}
 			if !strings.HasPrefix(realFile, "/") || strings.HasPrefix(realFile, "/dev/") {
