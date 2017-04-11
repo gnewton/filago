@@ -13,7 +13,11 @@ import (
 	"time"
 )
 
+// children: cat /proc/2800/task/2800/children
+
 var prevOpenFiles map[string]struct{}
+
+type Config interface{}
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -28,6 +32,10 @@ func main() {
 		log.Fatal("Must be an integer")
 	}
 
+	listOpenFiles(pid, nil)
+}
+
+func listOpenFiles(pid string, config Config) {
 	pidDevDir := "/proc/" + pid
 
 	exists, err := exists(pidDevDir)
