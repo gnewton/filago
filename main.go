@@ -43,8 +43,6 @@ func main() {
 
 	if len(flag.Args()) != 1 {
 		log.Println(flag.Args())
-
-		usage()
 		return
 	}
 	pid := flag.Args()[0]

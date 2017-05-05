@@ -1,6 +1,6 @@
 # filago
 Monitor open files (via /proc/pid) of a process.
-Lists time when it first sees the file open, and when it is no longer open.
+Lists time when it first sees the file open (which may be later than when the file actually opened, especially at startup of filago), and when it is no longer open.
 
 
 ## Building
@@ -12,7 +12,12 @@ $ go build
 
 ### Usage:
 ```
-$ filago pid
+$ ./filago --help
+Usage of ./filago:
+  -d uint
+    	Time granularity for checking files, in milliseconds (default 10)
+  -r	Show only real files, i.e. no pipes, sockets, etc.
+$
 ```
 
 ### Output
@@ -21,25 +26,45 @@ Sample output (tab separated):
 
 ```
 $ filago 1792
-2017-04-06T00:08:57.959133-04:00	open	/home/bsmith/.xsession-errors
-2017-04-06T00:09:00.519095-04:00	open	/usr/share/emacs/24.5/etc/images/icons/hicolor/scalable/apps/emacs.svg
-2017-04-06T00:09:00.529033-04:00	close	/usr/share/emacs/24.5/etc/images/icons/hicolor/scalable/apps/emacs.svg
-2017-04-06T00:09:14.839044-04:00	open	/usr/share/emacs/24.5/etc/images/icons/hicolor/scalable/apps/emacs.svg
-2017-04-06T00:09:14.849037-04:00	close	/usr/share/emacs/24.5/etc/images/icons/hicolor/scalable/apps/emacs.svg
-2017-04-06T00:09:35.089172-04:00	open	/usr/share/emacs/24.5/etc/images/icons/hicolor/scalable/apps/emacs.svg
-2017-04-06T00:09:35.099067-04:00	close	/usr/share/emacs/24.5/etc/images/icons/hicolor/scalable/apps/emacs.svg
+2017-05-05T00:01:25.002325-04:00 open pipe:[25629]
+2017-05-05T00:01:25.002325-04:00 open /home/guser/.xsession-errors
+2017-05-05T00:01:25.002325-04:00 open socket:[28116]
+2017-05-05T00:01:25.002325-04:00 open /home/guser/.local/share/gvfs-metadata/home-405fe1ec.log (deleted)
+2017-05-05T00:01:25.002325-04:00 open socket:[28117]
+2017-05-05T00:01:25.002325-04:00 open pipe:[28118]
+2017-05-05T00:01:25.002325-04:00 open pipe:[96074]
+2017-05-05T00:01:25.002325-04:00 open /home/guser/install/firefox/omni.ja
+2017-05-05T00:01:25.002325-04:00 open socket:[96077]
+2017-05-05T00:01:25.002325-04:00 open /home/guser/.mozilla/firefox/uqsr6u0q.default/features/{67ce503f-44fb-407b-86fc-eb27d1da49b7}/shield-recipe-client@mozilla.org.xpi
+2017-05-05T00:01:25.002325-04:00 open /home/guser/install/firefox/browser/omni.ja
+2017-05-05T00:01:25.002325-04:00 open pipe:[22385]
+2017-05-05T00:01:25.002325-04:00 open /home/guser/.cache/event-sound-cache.tdb.9bf539dba0e34f7aaf456bd844b6826e.x86_64-redhat-linux-gnu
+2017-05-05T00:01:25.002325-04:00 open pipe:[29953]
+2017-05-05T00:01:25.002325-04:00 open socket:[20246]
+2017-05-05T00:01:25.002325-04:00 open pipe:[29954]
+2017-05-05T00:01:25.002325-04:00 open socket:[20407]
+2017-05-05T00:01:25.002325-04:00 open socket:[27198]
+2017-05-05T00:01:25.002325-04:00 open anon_inode:[eventfd]
+2017-05-05T00:01:25.002325-04:00 open anon_inode:inotify
+2017-05-05T00:01:25.002325-04:00 open socket:[26094]
+```
 
-2017-04-06T00:09:42.029112-04:00	open	/usr/share/emacs/24.5/etc/images/icons/hicolor/scalable/apps/emacs.svg
-2017-04-06T00:09:42.039114-04:00	close	/usr/share/emacs/24.5/etc/images/icons/hicolor/scalable/apps/emacs.svg
-2017-04-06T00:10:18.379028-04:00	open	/usr/share/emacs/24.5/etc/images/icons/hicolor/scalable/apps/emacs.svg
-2017-04-06T00:10:18.38908-04:00	close	/usr/share/emacs/24.5/etc/images/icons/hicolor/scalable/apps/emacs.svg
-2017-04-06T00:10:33.629016-04:00	open	/home/bsmith/.emacs
-2017-04-06T00:10:33.639025-04:00	close	/home/bsmith/.emacs
-2017-04-06T00:10:40.349049-04:00	open	/home/bsmith/.emacs
-2017-04-06T00:10:40.35902-04:00	close	/home/bsmith/.emacs
-2017-04-06T00:14:28.219021-04:00	open	/home/bsmith/work/flogg/main.go
-2017-04-06T00:14:28.229087-04:00	close	/home/bsmith/work/flogg/main.go
-
+Only real files:
+```
+$ ./filago   -r 1943
+2017-05-05T00:02:29.39932-04:00 open /home/guser/.xsession-errors
+2017-05-05T00:02:29.39932-04:00 open /home/guser/.local/share/gvfs-metadata/home-405fe1ec.log (deleted)
+2017-05-05T00:02:29.39932-04:00 open /home/guser/install/firefox/omni.ja
+2017-05-05T00:02:29.39932-04:00 open /home/guser/.mozilla/firefox/uqsr6u0q.default/features/{67ce503f-44fb-407b-86fc-eb27d1da49b7}/shield-recipe-client@mozilla.org.xpi
+2017-05-05T00:02:29.39932-04:00 open /home/guser/install/firefox/browser/omni.ja
+2017-05-05T00:02:29.39932-04:00 open /home/guser/.cache/event-sound-cache.tdb.9bf539dba0e34f7aaf456bd844b6826e.x86_64-redhat-linux-gnu
+2017-05-05T00:02:29.39932-04:00 open /home/guser/.mozilla/firefox/uqsr6u0q.default/cert8.db
+2017-05-05T00:02:29.39932-04:00 open /home/guser/.mozilla/firefox/uqsr6u0q.default/key3.db
+2017-05-05T00:02:29.39932-04:00 open /home/guser/install/firefox/browser/features/aushelper@mozilla.org.xpi
+2017-05-05T00:02:29.39932-04:00 open /home/guser/install/firefox/browser/features/e10srollout@mozilla.org.xpi
+2017-05-05T00:02:29.39932-04:00 open /home/guser/install/firefox/browser/features/firefox@getpocket.com.xpi
+2017-05-05T00:02:29.39932-04:00 open /home/guser/.mozilla/firefox/uqsr6u0q.default/extensions/jid1-MnnxcxisBPnSXQ-eff@jetpack.xpi
+2017-05-05T00:02:29.39932-04:00 open /home/guserx/.mozilla/firefox/uqsr6u0q.default/extensions/jid1-uqbSKwXpf2K6yl@jetpack.xpi
 ```
 
 ## Caveat
