@@ -4,6 +4,7 @@ package main
 // BSD 3-Clause License
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -13,30 +14,51 @@ import (
 	"time"
 )
 
-// children: cat /proc/2800/task/2800/children
+const PROC = "/proc/"
+const FD = "/fd"
+const SLASH = "/"
+const DEV = "/dev/"
+
+var delayInMillis uint64 = 10
+var realFilesOnly = false
 
 var prevOpenFiles map[string]struct{}
 
 type Config interface{}
 
+func init() {
+	flag.Uint64Var(&delayInMillis, "d", delayInMillis, "Time granularity for checking files, in milliseconds")
+	flag.BoolVar(&realFilesOnly, "r", realFilesOnly, "Show only real files, i.e. no pipes, sockets, etc.")
+}
+
+func handleParameters() {
+	flag.Parse()
+
+}
+
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	if len(os.Args) != 2 {
+
+	handleParameters()
+
+	if len(flag.Args()) != 1 {
+		log.Println(flag.Args())
+
 		usage()
 		return
 	}
-	pid := os.Args[1]
+	pid := flag.Args()[0]
 
-	_, err := strconv.Atoi(os.Args[1])
+	_, err := strconv.Atoi(pid)
 	if err != nil {
-		log.Fatal("Must be an integer")
+		log.Fatal("Must be an process number (integer): " + pid)
 	}
 
 	listOpenFiles(pid, nil)
 }
 
 func listOpenFiles(pid string, config Config) {
-	pidDevDir := "/proc/" + pid
+	pidDevDir := PROC + pid
 
 	exists, err := exists(pidDevDir)
 	if err != nil {
@@ -70,7 +92,7 @@ func listOpenFiles(pid string, config Config) {
 		// Remove files no longer open & print them out
 		for i, _ := range toBeRemoved {
 			delete(prevOpenFiles, toBeRemoved[i])
-			fmt.Printf("%s\tclose\t%s\n", t.Format("2006-01-02T15:04:05.999999-07:00"), toBeRemoved[i])
+			fmt.Printf("%s close %s\n", t.Format("2006-01-02T15:04:05.999999-07:00"), toBeRemoved[i])
 		}
 
 		// Add new files that have been opened & print them out
@@ -81,7 +103,7 @@ func listOpenFiles(pid string, config Config) {
 				continue
 			} else {
 				prevOpenFiles[of] = struct{}{}
-				fmt.Printf("%s\topen\t%s\n", t.Format("2006-01-02T15:04:05.999999-07:00"), openFiles[i])
+				fmt.Printf("%s open %s\n", t.Format("2006-01-02T15:04:05.999999-07:00"), openFiles[i])
 
 			}
 		}
@@ -90,30 +112,12 @@ func listOpenFiles(pid string, config Config) {
 
 }
 
-func usage() {
-	// FIXX
-	fmt.Println("usage")
-}
-
-// From: https://stackoverflow.com/questions/10510691/how-to-check-whether-a-file-or-directory-denoted-by-a-path-exists-in-golang
-// exists returns whether the given file or directory exists or not
-func exists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return true, err
-}
-
 func getOpenFiles(d string, c chan []string) {
 
-	fdDir := d + "/fd"
+	fdDir := d + FD
 
 	// Needs to be definable at command line
-	ticker := time.NewTicker(time.Millisecond * 10)
+	ticker := time.NewTicker(time.Millisecond * time.Duration(delayInMillis))
 	for _ = range ticker.C {
 		exists, err := exists(fdDir)
 		if err != nil {
@@ -133,7 +137,7 @@ func getOpenFiles(d string, c chan []string) {
 			if err != nil {
 				continue
 			}
-			if !strings.HasPrefix(realFile, "/") || strings.HasPrefix(realFile, "/dev/") {
+			if realFilesOnly && !strings.HasPrefix(realFile, SLASH) || strings.HasPrefix(realFile, DEV) {
 				continue
 			}
 			openFiles = append(openFiles, realFile)
@@ -141,4 +145,17 @@ func getOpenFiles(d string, c chan []string) {
 		c <- openFiles
 	}
 	close(c)
+}
+
+// From: https://stackoverflow.com/questions/10510691/how-to-check-whether-a-file-or-directory-denoted-by-a-path-exists-in-golang
+// exists returns whether the given file or directory exists or not
+func exists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return true, err
 }
