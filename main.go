@@ -4,8 +4,10 @@ package main
 // BSD 3-Clause License
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -22,7 +24,7 @@ const DEV = "/dev/"
 var delayInMillis uint64 = 10
 var realFilesOnly = false
 
-var prevOpenFiles map[string]struct{}
+var prevOpenFiles map[string]*SocketInfo
 
 type Config interface{}
 
@@ -55,6 +57,10 @@ func main() {
 	listOpenFiles(pid, nil)
 }
 
+const SocketInodePrefix = "socket:["
+
+var lenSocketInodePrefix = len(SocketInodePrefix)
+
 func listOpenFiles(pid string, config Config) {
 	pidDevDir := PROC + pid
 
@@ -68,7 +74,7 @@ func listOpenFiles(pid string, config Config) {
 	c := make(chan []string)
 	go getOpenFiles(pidDevDir, c)
 
-	prevOpenFiles = make(map[string]struct{})
+	prevOpenFiles = make(map[string]*SocketInfo)
 
 	for openFiles := range c {
 		t := time.Now()
@@ -90,18 +96,29 @@ func listOpenFiles(pid string, config Config) {
 		// Remove files no longer open & print them out
 		for i, _ := range toBeRemoved {
 			delete(prevOpenFiles, toBeRemoved[i])
-			fmt.Printf("%s close %s\n", t.Format("2006-01-02T15:04:05.999999-07:00"), toBeRemoved[i])
+			printFile(toBeRemoved[i], t, false, nil)
+			//fmt.Printf("%s close %s\n", t.Format("2006-01-02T15:04:05.999999-07:00"), toBeRemoved[i])
 		}
 
 		// Add new files that have been opened & print them out
+
 		for i, _ := range openFiles {
 			of := openFiles[i]
 			presentlyOpenFiles[of] = struct{}{}
 			if _, ok := prevOpenFiles[of]; ok {
 				continue
 			} else {
-				prevOpenFiles[of] = struct{}{}
-				fmt.Printf("%s open %s\n", t.Format("2006-01-02T15:04:05.999999-07:00"), openFiles[i])
+				var socketInfo *SocketInfo = nil
+				if strings.HasPrefix(openFiles[i], SocketInodePrefix) {
+					inode := openFiles[i][lenSocketInodePrefix:]
+					inode = inode[0 : len(inode)-1]
+					socketInfo = getSocketInfo(inode)
+				}
+
+				prevOpenFiles[of] = socketInfo
+				printFile(openFiles[i], t, true, socketInfo)
+
+				//fmt.Printf("%s open %s\n", t.Format("2006-01-02T15:04:05.999999-07:00"), openFiles[i])
 
 			}
 		}
@@ -110,13 +127,62 @@ func listOpenFiles(pid string, config Config) {
 
 }
 
+const CLOSED = "close"
+const OPEN = "open"
+
+func printFile(filename string, t time.Time, isOpen bool, si *SocketInfo) {
+	status := CLOSED
+	if isOpen {
+		status = OPEN
+	}
+	if si == nil {
+		fmt.Printf("%s "+status+" %s\n", t.Format("2006-01-02T15:04:05.999999-07:00"), filename)
+	} else {
+		fmt.Printf("%s "+status+" %s %s:%d\n", t.Format("2006-01-02T15:04:05.999999-07:00"), filename, si.remoteIP, si.remotePort)
+	}
+}
+
+const ProcTcp = "/proc/net/tcp"
+
+func getSocketInfo(inode string) *SocketInfo {
+	i, err := strconv.ParseInt(inode, 10, 32)
+	tcpFile := ProcTcp
+
+	f, err := os.Open(tcpFile)
+	if err != nil {
+		fmt.Println("error opening file ", err)
+		os.Exit(1)
+	}
+	defer f.Close()
+
+	r := bufio.NewReader(f)
+	line, err := r.ReadString(10) // 0x0A separator = newline
+	for {
+		line, err = r.ReadString(10) // 0x0A separator = newline
+		if err == io.EOF {
+			return nil
+			break
+		} else if err != nil {
+			return nil
+		}
+		//fmt.Println("--------", line)
+		si := NewSocketInfo(line)
+
+		if i == si.inode {
+			return si
+		}
+	}
+	return nil
+
+}
+
 func getOpenFiles(d string, c chan []string) {
 
 	fdDir := d + FD
 
-	// Needs to be definable at command line
 	ticker := time.NewTicker(time.Millisecond * time.Duration(delayInMillis))
 	for _ = range ticker.C {
+
 		exists, err := exists(fdDir)
 		if err != nil {
 			close(c)
