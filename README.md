@@ -1,7 +1,10 @@
 # filago
 Monitor open files (via /proc/pid) of a process.
 Lists time when it first sees the file open (which may be later than when the file actually opened, especially at startup of filago), and when it is no longer open.
+
 This includes tcp and unix sockets.
+
+*Only works on Linux*
 
 
 ## Building
