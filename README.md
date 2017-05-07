@@ -166,4 +166,4 @@ $ ./filago -r 2262
 ##TODO
 - Allow turning off of DNS hostname lookups (can be slow/expensive) & some servers not on DNS
 - Unix and tcp socket info in /proc/net/[unix|tcp] read too often: need to change so not read so much...
-
+- JSON output
