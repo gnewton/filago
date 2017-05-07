@@ -19,7 +19,7 @@ const FD = "/fd"
 const SLASH = "/"
 const DEV = "/dev/"
 
-var delayInMillis uint64 = 10
+var delayInMillis uint64 = 100
 var realFilesOnly = false
 
 var prevOpenFiles map[string]*FDInfo
@@ -29,6 +29,8 @@ type Config interface{}
 func init() {
 	flag.Uint64Var(&delayInMillis, "d", delayInMillis, "Time granularity for checking files, in milliseconds")
 	flag.BoolVar(&realFilesOnly, "r", realFilesOnly, "Show only real files, i.e. no pipes, sockets, etc.")
+
+	initCache()
 }
 
 func handleParameters() {
@@ -115,7 +117,10 @@ func listOpenFiles(pid string, config Config) {
 			} else {
 				var socketInfo *SocketInfo = nil
 				if strings.HasPrefix(openFiles[i].filename, SocketInodePrefix) {
-
+					// This should be altered so only run once, outside of loop, not for each file
+					// as we read /proc/net/[tcp|unux] completely for each file...BAD FIXXX
+					// Expensive
+					//
 					socketInfo = getSocketInfo(extractInode(openFiles[i].filename))
 				}
 
@@ -143,7 +148,14 @@ func printFile(filename string, t *time.Time, isOpen bool, si *SocketInfo) {
 	if si == nil {
 		fmt.Printf("%s "+status+" %s\n", t.Format("2006-01-02T15:04:05.999999-07:00"), filename)
 	} else {
-		fmt.Printf("%s "+status+" %s %s %s:%d\n", t.Format("2006-01-02T15:04:05.999999-07:00"), filename, si.stype, si.remoteIP, si.remotePort)
+		if si.stype == TCPSocket {
+			fmt.Printf("%s "+status+" %s %s %s:%d %s\n", t.Format("2006-01-02T15:04:05.999999-07:00"), filename, si.stype, si.tcp.remoteIP, si.tcp.remotePort, getRemoteHostname(si.tcp.remoteIP.String()))
+		} else {
+			if si.unix.path == "" {
+				si.unix.path = "-"
+			}
+			fmt.Printf("%s "+status+" %s %s %s\n", t.Format("2006-01-02T15:04:05.999999-07:00"), filename, si.stype, si.unix.path)
+		}
 	}
 }
 

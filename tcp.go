@@ -10,6 +10,7 @@ import (
 )
 
 const ProcNetTcp = "/proc/net/tcp"
+const TCPSocket = "tcp"
 
 // Linux /proc/net/tcp
 //   sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
@@ -40,12 +41,29 @@ type SocketInfoXY interface {
 }
 
 type SocketInfo struct {
-	sl, localPort, remotePort, st, tr, uid                            int32
-	local, remote, txQueue, rxQueue, tmWhen, inode, retrnsmt, timeout int64
-	theRest                                                           string
-	remoteIP, localIP                                                 net.IP
-
 	stype string
+	inode int64
+	tcp   *TCPSocketInfo
+	unix  *UnixSocketInfo
+}
+
+type TCPSocketInfo struct {
+	sl         int32
+	localPort  int32
+	remotePort int32
+	st         int32
+	tr         int32
+	uid        int32
+	local      int64
+	remote     int64
+	txQueue    int64
+	rxQueue    int64
+	tmWhen     int64
+	retrnsmt   int64
+	timeout    int64
+	theRest    string
+	remoteIP   net.IP
+	localIP    net.IP
 }
 
 // Expects line corresponding to Linux /proc/net/tcp
@@ -53,9 +71,11 @@ func NewTcpSocketInfo(l string) *SocketInfo {
 	if l == "" {
 		return nil
 	}
-	var s SocketInfo
+	var s TCPSocketInfo
+	var si SocketInfo
+	si.tcp = &s
 
-	_, err := fmt.Sscanf(l, "%5d: %08X:%04X %08X:%04X %02X %08X:%08X %02X:%08X %08X %5d %8d %7d %s", &s.sl, &s.local, &s.localPort, &s.remote, &s.remotePort, &s.st, &s.txQueue, &s.rxQueue, &s.tr, &s.tmWhen, &s.retrnsmt, &s.uid, &s.timeout, &s.inode, &s.theRest)
+	_, err := fmt.Sscanf(l, "%5d: %08X:%04X %08X:%04X %02X %08X:%08X %02X:%08X %08X %5d %8d %7d %s", &s.sl, &s.local, &s.localPort, &s.remote, &s.remotePort, &s.st, &s.txQueue, &s.rxQueue, &s.tr, &s.tmWhen, &s.retrnsmt, &s.uid, &s.timeout, &si.inode, &s.theRest)
 
 	if err != nil {
 		log.Println(l)
@@ -64,10 +84,11 @@ func NewTcpSocketInfo(l string) *SocketInfo {
 	}
 
 	s.remoteIP = inet_ntoa(s.remote)
+
 	s.localIP = inet_ntoa(s.local)
 	//fmt.Printf("foo    %+v\n", s)
-	s.stype = "tcp"
-	return &s
+	si.stype = TCPSocket
+	return &si
 }
 
 // inet_ntoa: From: https://groups.google.com/d/msg/golang-nuts/v4eJ5HK3stI/Tah15fMOC80J Author: Paul van Brouwershaven
