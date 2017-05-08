@@ -25,23 +25,23 @@ $
 ```
 
 ### Output
-File:
+#### File:
 ```
 timestamp [open|close] path
 ```
 
-Socket:
-General:
+#### Socket:
+##### General:
 ```
 timestamp [open|close] path
 ```
 
-Unix socket:
+##### Unix socket:
 ```
 timestamp [open|close] path unix [path|-]
 ```
 
-tcp socket:
+##### tcp socket:
 ```
 timestamp [open|close] path tcp ip:port fqhn
 ```
