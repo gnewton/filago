@@ -165,7 +165,7 @@ $ ./filago -r 2262
 ```
 
 ## Caveat
-`filago` checks every 10 milliseconds, so can miss open/closes smaller than this granularity.
+*`filago` checks every 100 milliseconds (modifiable by command line -d), so can miss open/closes smaller than this temporal granularity.*
 
 ## TODO
 - Allow turning off of DNS hostname lookups (can be slow/expensive) & some servers not on DNS
