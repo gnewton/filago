@@ -4,7 +4,6 @@ package main
 // BSD 3-Clause License
 
 import (
-	//"fmt"
 	"github.com/hashicorp/golang-lru"
 	"log"
 	"net"
@@ -23,6 +22,15 @@ func initCache() {
 // Returns dot at end of FQHN: http://www.dns-sd.org/trailingdotsindomainnames.html
 //
 func getRemoteHostname(ip string) string {
+	emptyValue := EmptyValue
+
+	if jsonOut {
+		emptyValue = ""
+	}
+
+	if !lookupHostnames {
+		return emptyValue
+	}
 
 	if hostnameCache.Contains(ip) {
 		v, _ := hostnameCache.Get(ip)
@@ -37,13 +45,13 @@ func getRemoteHostname(ip string) string {
 	hostnames, err := net.LookupAddr(ip)
 	if err != nil {
 		//log.Println(err)
-		return ""
+		return emptyValue
 	} else {
 		if len(hostnames) > 0 {
 			hostnameCache.Add(ip, hostnames[0])
 			return hostnames[0]
 		}
 	}
-	return ""
+	return emptyValue
 
 }

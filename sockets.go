@@ -9,6 +9,12 @@ type SocketInfoX interface {
 	GetType() string
 }
 
+type SocketInfo struct {
+	Inode int64           `json:"inode,omitempty"`
+	Tcp   *TCPSocketInfo  `json:"tcp_socket,omitempty"`
+	Unix  *UnixSocketInfo `json:"unix_socket,omitempty"`
+}
+
 func getSocketInfo(inode string) *SocketInfo {
 
 	inodeInt, err := strconv.ParseInt(inode, 10, 32)
@@ -22,6 +28,12 @@ func getSocketInfo(inode string) *SocketInfo {
 		log.Println(err)
 		return nil
 	}
-	return getUnixSocketInfo(inodeInt)
 
+	info = getUnixSocketInfo(inodeInt)
+	if info != nil {
+		return info
+	}
+	//info = new(SocketInfo)
+	//return info
+	return nil
 }

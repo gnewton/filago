@@ -9,9 +9,6 @@ import (
 	"os"
 )
 
-const ProcNetTcp = "/proc/net/tcp"
-const TCPSocket = "tcp"
-
 // Linux /proc/net/tcp
 //   sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
 
@@ -34,36 +31,30 @@ const TCPSocket = "tcp"
 //          tcp_in_initial_slowstart(tp) ? -1 : tp->snd_ssthresh,
 //          len);
 
-type SocketInfoXY interface {
-	getInode() int64
-	getOutput() string
-	getJson() string
-}
-
-type SocketInfo struct {
-	stype string
-	inode int64
-	tcp   *TCPSocketInfo
-	unix  *UnixSocketInfo
-}
+// type SocketInfoXY interface {
+// 	getInode() int64
+// 	getOutput() string
+// 	getJson() string
+// }
 
 type TCPSocketInfo struct {
-	sl         int32
-	localPort  int32
-	remotePort int32
-	st         int32
-	tr         int32
-	uid        int32
-	local      int64
-	remote     int64
-	txQueue    int64
-	rxQueue    int64
-	tmWhen     int64
-	retrnsmt   int64
-	timeout    int64
-	theRest    string
-	remoteIP   net.IP
-	localIP    net.IP
+	RemoteHostName string `json:"rem_hostname,omitempty"`
+	Sl             int32  `json:"sl,omitempty"`
+	LocalPort      int32  `json:"local_port,omitempty"`
+	RemotePort     int32  `json:"remote_port,omitempty"`
+	St             int32  `json:"st,omitempty"`
+	Tr             int32  `json:"tr,omitempty"`
+	Uid            int32  `json:"uid,omitempty"`
+	Local          int64  `json:"-"`
+	Remote         int64  `json:"-"`
+	TxQueue        int64  `json:"tx_queue,omitempty"`
+	RxQueue        int64  `json:"rx_queue,omitempty"`
+	TmWhen         int64  `json:"tm_when,omitempty"`
+	Retrnsmt       int64  `json:"retrnsmt,omitempty"`
+	Timeout        int64  `json:"timeout,omitempty"`
+	TheRest        string `json:"extra,omitempty"`
+	RemoteIP       net.IP `json:"rem_address,omitempty"`
+	LocalIP        net.IP `json:"local_address,omitempty"`
 }
 
 // Expects line corresponding to Linux /proc/net/tcp
@@ -73,9 +64,9 @@ func NewTcpSocketInfo(l string) *SocketInfo {
 	}
 	var s TCPSocketInfo
 	var si SocketInfo
-	si.tcp = &s
+	si.Tcp = &s
 
-	_, err := fmt.Sscanf(l, "%5d: %08X:%04X %08X:%04X %02X %08X:%08X %02X:%08X %08X %5d %8d %7d %s", &s.sl, &s.local, &s.localPort, &s.remote, &s.remotePort, &s.st, &s.txQueue, &s.rxQueue, &s.tr, &s.tmWhen, &s.retrnsmt, &s.uid, &s.timeout, &si.inode, &s.theRest)
+	_, err := fmt.Sscanf(l, "%5d: %08X:%04X %08X:%04X %02X %08X:%08X %02X:%08X %08X %5d %8d %7d %s", &s.Sl, &s.Local, &s.LocalPort, &s.Remote, &s.RemotePort, &s.St, &s.TxQueue, &s.RxQueue, &s.Tr, &s.TmWhen, &s.Retrnsmt, &s.Uid, &s.Timeout, &si.Inode, &s.TheRest)
 
 	if err != nil {
 		log.Println(l)
@@ -83,11 +74,10 @@ func NewTcpSocketInfo(l string) *SocketInfo {
 		return nil
 	}
 
-	s.remoteIP = inet_ntoa(s.remote)
+	s.RemoteIP = inet_ntoa(s.Remote)
 
-	s.localIP = inet_ntoa(s.local)
+	s.LocalIP = inet_ntoa(s.Local)
 	//fmt.Printf("foo    %+v\n", s)
-	si.stype = TCPSocket
 	return &si
 }
 
@@ -128,7 +118,7 @@ func getTCPSocketInfo(inode int64) *SocketInfo {
 		if si == nil {
 			return nil
 		}
-		if inode == si.inode {
+		if inode == si.Inode {
 			return si
 		}
 	}

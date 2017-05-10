@@ -9,23 +9,20 @@ import (
 	//"net"
 )
 
-const ProcNetUnix = "/proc/net/unix"
-const UnixSocket = "unix"
-
 type UnixSocketInfo struct {
-	num      string
-	refcount string
-	protocol string
-	flags    string
-	stype    string
-	st       string
-	inode    int64
-	path     string
+	Num      string `json:"num,omitempty"`
+	Refcount string `json:"refcount,omitempty"`
+	Protocol string `json:"protocol,omitempty"`
+	Flags    string `json:"flags,omitempty"`
+	Stype    string `json:"type,omitempty"`
+	St       string `json:"st,omitempty"`
+	Inode    int64  `json:"inode,omitempty"`
+	Path     string `json:"path,omitempty"`
 }
 
 func NewUnixSocketInfo(s string) *UnixSocketInfo {
 	var us UnixSocketInfo
-	fmt.Sscanf(s, "%16s: %8s %8s %8s %4s %2s %7d %s", &us.num, &us.refcount, &us.protocol, &us.flags, &us.stype, &us.st, &us.inode, &us.path)
+	fmt.Sscanf(s, "%16s: %8s %8s %8s %4s %2s %7d %s", &us.Num, &us.Refcount, &us.Protocol, &us.Flags, &us.Stype, &us.St, &us.Inode, &us.Path)
 	return &us
 }
 
@@ -60,10 +57,9 @@ func getUnixSocketInfo(inode int64) *SocketInfo {
 			return nil
 		}
 		//fmt.Println("++++++++++++", inode, us)
-		if inode == us.inode {
+		if inode == us.Inode {
 			var si SocketInfo
-			si.unix = us
-			si.stype = UnixSocket
+			si.Unix = us
 			return &si
 		}
 	}

@@ -21,6 +21,8 @@ $ ./filago --help
 Usage of ./filago:
   -d uint
     	Time granularity for checking files, in milliseconds (default 100)
+  -j	Output json (complete json per line)
+  -l	Turn on hostname lookup (default is a "-"
   -r	Show only real files, i.e. no pipes, sockets, etc.
 $
 ```
@@ -169,6 +171,5 @@ $ ./filago -r 2262
 *`filago` checks every 100 milliseconds (modifiable by command line -d), so can miss open/closes smaller than this temporal granularity.*
 
 ## TODO
-- Allow turning off of DNS hostname lookups (can be slow/expensive) & some servers not on DNS
 - Unix and tcp socket info in /proc/net/[unix|tcp] read too often: need to change so not read so much...
-- JSON output
+

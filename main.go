@@ -5,30 +5,58 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 )
 
 const PROC = "/proc/"
+
 const FD = "/fd"
-const SLASH = "/"
+const ProcNetUnix = "/proc/net/unix"
+const ProcNetTcp = "/proc/net/tcp"
+
+const SLASH = string(filepath.Separator)
 const DEV = "/dev/"
+const EmptyValue = "-"
+
+// Types of files:
+const File = "file"
+const Pipe = "pipe"
+const TCPSocket = "tcp"
+const UnixSocket = "unix"
+const AnonInode = "anon_inode"
+
+//Inode prefixes
+const SocketInodePrefix = "socket:["
+const PipeInodePrefix = "pipe:["
+const AnonInodePrefix = "anon_inode:"
 
 var delayInMillis uint64 = 100
 var realFilesOnly = false
+var lookupHostnames = false
+var jsonOut = false
 
 var prevOpenFiles map[string]*FDInfo
 
 type Config interface{}
 
+type FDInfo struct {
+	Filename   string      `json:"filename,omitempty"`
+	Type       string      `json:"type,omitempty"`
+	SocketInfo *SocketInfo `json:"socket_info,omitempty"`
+	Status     string      `json:"status,omitempty"`
+}
+
 func init() {
 	flag.Uint64Var(&delayInMillis, "d", delayInMillis, "Time granularity for checking files, in milliseconds")
 	flag.BoolVar(&realFilesOnly, "r", realFilesOnly, "Show only real files, i.e. no pipes, sockets, etc.")
+	flag.BoolVar(&lookupHostnames, "l", lookupHostnames, "Turn on hostname lookup (default is a \""+EmptyValue+"\"")
+	flag.BoolVar(&jsonOut, "j", jsonOut, "Output json (complete json per line)")
 
 	initCache()
 }
@@ -57,8 +85,6 @@ func main() {
 	listOpenFiles(pid, nil)
 }
 
-const SocketInodePrefix = "socket:["
-
 var lenSocketInodePrefix = len(SocketInodePrefix)
 
 func listOpenFiles(pid string, config Config) {
@@ -82,7 +108,7 @@ func listOpenFiles(pid string, config Config) {
 
 		//Make hash of open files
 		for i, _ := range openFiles {
-			presentlyOpenFiles[openFiles[i].filename] = openFiles[i]
+			presentlyOpenFiles[openFiles[i].Filename] = openFiles[i]
 		}
 
 		//Find files no longer open
@@ -97,7 +123,7 @@ func listOpenFiles(pid string, config Config) {
 		for i, _ := range toBeRemoved {
 			fdInfo, ok := prevOpenFiles[toBeRemoved[i]]
 			if ok {
-				printFile(toBeRemoved[i], &t, false, fdInfo.socketInfo)
+				printFile(toBeRemoved[i], &t, false, fdInfo)
 			} else {
 				printFile(toBeRemoved[i], &t, false, nil)
 			}
@@ -111,21 +137,46 @@ func listOpenFiles(pid string, config Config) {
 
 		for i, _ := range openFiles {
 			of := openFiles[i]
-			presentlyOpenFiles[of.filename] = of
-			if _, ok := prevOpenFiles[of.filename]; ok {
+			presentlyOpenFiles[of.Filename] = of
+			if _, ok := prevOpenFiles[of.Filename]; ok {
 				continue
 			} else {
-				var socketInfo *SocketInfo = nil
-				if strings.HasPrefix(openFiles[i].filename, SocketInodePrefix) {
+				newFd := FDInfo{Filename: openFiles[i].Filename}
+
+				if strings.HasPrefix(openFiles[i].Filename, SocketInodePrefix) {
 					// This should be altered so only run once, outside of loop, not for each file
 					// as we read /proc/net/[tcp|unux] completely for each file...BAD FIXXX
 					// Expensive
 					//
-					socketInfo = getSocketInfo(extractInode(openFiles[i].filename))
+					newFd.SocketInfo = getSocketInfo(extractInode(openFiles[i].Filename))
+					if newFd.SocketInfo != nil {
+						if newFd.SocketInfo.Tcp != nil {
+							newFd.Type = "tcp"
+						} else {
+							if newFd.SocketInfo.Unix != nil {
+								newFd.Type = "unix"
+							} else {
+								newFd.Type = "other"
+							}
+						}
+					} else {
+						newFd.Type = "other"
+					}
+				} else {
+					if strings.HasPrefix(openFiles[i].Filename, PipeInodePrefix) {
+						newFd.Type = Pipe
+					} else {
+						if strings.HasPrefix(openFiles[i].Filename, AnonInodePrefix) {
+							newFd.Type = AnonInode
+						} else {
+							newFd.Type = File
+						}
+					}
+
 				}
 
-				prevOpenFiles[of.filename] = &(FDInfo{filename: openFiles[i].filename, socketInfo: socketInfo})
-				printFile(openFiles[i].filename, &t, true, socketInfo)
+				prevOpenFiles[of.Filename] = &newFd
+				printFile(openFiles[i].Filename, &t, true, &newFd)
 
 				//fmt.Printf("%s open %s\n", t.Format("2006-01-02T15:04:05.999999-07:00"), openFiles[i])
 
@@ -134,34 +185,6 @@ func listOpenFiles(pid string, config Config) {
 
 	}
 
-}
-
-const CLOSED = "close"
-const OPEN = "open"
-
-func printFile(filename string, t *time.Time, isOpen bool, si *SocketInfo) {
-
-	status := CLOSED
-	if isOpen {
-		status = OPEN
-	}
-	if si == nil {
-		fmt.Printf("%s "+status+" %s\n", t.Format("2006-01-02T15:04:05.999999-07:00"), filename)
-	} else {
-		if si.stype == TCPSocket {
-			fmt.Printf("%s "+status+" %s %s %s:%d %s\n", t.Format("2006-01-02T15:04:05.999999-07:00"), filename, si.stype, si.tcp.remoteIP, si.tcp.remotePort, getRemoteHostname(si.tcp.remoteIP.String()))
-		} else {
-			if si.unix.path == "" {
-				si.unix.path = "-"
-			}
-			fmt.Printf("%s "+status+" %s %s %s\n", t.Format("2006-01-02T15:04:05.999999-07:00"), filename, si.stype, si.unix.path)
-		}
-	}
-}
-
-type FDInfo struct {
-	filename   string
-	socketInfo *SocketInfo
 }
 
 //func getOpenFiles(d string, c chan []string) {
@@ -194,9 +217,9 @@ func getOpenFiles(d string, c chan []*FDInfo) {
 				continue
 			}
 			fdInfo := new(FDInfo)
-			fdInfo.filename = realFile
+			fdInfo.Filename = realFile
 			if strings.HasPrefix(realFile, SocketInodePrefix) {
-				fdInfo.socketInfo = getSocketInfo(extractInode(realFile))
+				fdInfo.SocketInfo = getSocketInfo(extractInode(realFile))
 			}
 			//openFiles = append(openFiles, realFile)
 			openFiles = append(openFiles, fdInfo)
