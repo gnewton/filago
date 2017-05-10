@@ -50,6 +50,7 @@ type FDInfo struct {
 	Type       string      `json:"type,omitempty"`
 	SocketInfo *SocketInfo `json:"socket_info,omitempty"`
 	Status     string      `json:"status,omitempty"`
+	ModTime    time.Time   `json:"mod_time,omitempty"`
 }
 
 func init() {
@@ -141,7 +142,8 @@ func listOpenFiles(pid string, config Config) {
 			if _, ok := prevOpenFiles[of.Filename]; ok {
 				continue
 			} else {
-				newFd := FDInfo{Filename: openFiles[i].Filename}
+				//newFd := FDInfo{Filename: openFiles[i].Filename}
+				newFd := *of
 
 				if strings.HasPrefix(openFiles[i].Filename, SocketInodePrefix) {
 					// This should be altered so only run once, outside of loop, not for each file
@@ -216,7 +218,14 @@ func getOpenFiles(d string, c chan []*FDInfo) {
 			if realFilesOnly && !strings.HasPrefix(realFile, SLASH) || strings.HasPrefix(realFile, DEV) {
 				continue
 			}
+			fileInfo, err := os.Stat(fullName)
+			if err != nil {
+				continue
+			}
+
 			fdInfo := new(FDInfo)
+			t := fileInfo.ModTime()
+			fdInfo.ModTime = t
 			fdInfo.Filename = realFile
 			if strings.HasPrefix(realFile, SocketInodePrefix) {
 				fdInfo.SocketInfo = getSocketInfo(extractInode(realFile))
