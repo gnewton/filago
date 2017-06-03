@@ -53,7 +53,7 @@ timestamp [open|close] path tcp ip:port fqhn
 Hostnames are looked-up and cached.
 
 
-Sample default output on firefox:
+Sample output on firefox, hostname lookup turned on:
 
 ```
 $ ./filago 2262
