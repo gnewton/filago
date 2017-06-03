@@ -8,14 +8,14 @@ This includes tcp and unix sockets.
 *Only works on Linux*
 
 
-## Building
+# Building
 ```
 $ git clone https://github.com/gnewton/filago.git
 $ cd filago
 $ go build
 ```
 
-### Usage:
+# Usage:
 ```
 $ ./filago --help
 Usage of ./filago:
@@ -27,13 +27,14 @@ Usage of ./filago:
 $
 ```
 
-### Output
-#### File:
+# Output
+## Default text output
+### Files:
 ```
 timestamp [open|close] path
 ```
 
-#### Socket:
+### Socket:
 ##### General:
 ```
 timestamp [open|close] path
@@ -167,7 +168,7 @@ $ ./filago -r 2262
 2017-05-07T12:44:41.405442-04:00 open /home/gnewton/.cache/event-sound-cache.tdb.9bf539dba0e34f7aaf456bd844b6826e.x86_64-redhat-linux-gnu
 ```
 
-json output with hostnames looked up:
+## json output with hostnames looked up:
 ```
 $ ./filago -l -j 3737
 {"filename":"socket:[95066]","type":"unix","socket_info":{"unix_socket":{"num":"ffff8803e6c99f80","refcount":"00000003","protocol":"00000000","flags":"00000000","type":"0001","st":"03","inode":95066}},"status":"open","mod_time":"1969-12-31T19:00:00-05:00"}
