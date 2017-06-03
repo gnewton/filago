@@ -189,7 +189,6 @@ func listOpenFiles(pid string, config Config) {
 
 }
 
-//func getOpenFiles(d string, c chan []string) {
 func getOpenFiles(d string, c chan []*FDInfo) {
 
 	fdDir := d + FD

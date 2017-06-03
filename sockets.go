@@ -33,7 +33,5 @@ func getSocketInfo(inode string) *SocketInfo {
 	if info != nil {
 		return info
 	}
-	//info = new(SocketInfo)
-	//return info
 	return nil
 }

@@ -40,11 +40,8 @@ func getRemoteHostname(ip string) string {
 			return hostname
 		}
 	}
-	//fmt.Println("MISS")
-	//hostnames, err := net.LookupAddr(s.remoteIP.String())
 	hostnames, err := net.LookupAddr(ip)
 	if err != nil {
-		//log.Println(err)
 		return emptyValue
 	} else {
 		if len(hostnames) > 0 {
