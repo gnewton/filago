@@ -8,19 +8,18 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 )
 
+// Proc directories
 const PROC = "/proc/"
-
 const FD = "/fd"
-const ProcNetUnix = "/proc/net/unix"
-const ProcNetTcp = "/proc/net/tcp"
+const ProcNetUnix = PROC + "/net/unix"
+const ProcNetTcp = PROC + "/net/tcp"
 
-const SLASH = string(filepath.Separator)
+const SLASH = "/"
 const DEV = "/dev/"
 const EmptyValue = "-"
 
@@ -56,7 +55,7 @@ type FDInfo struct {
 func init() {
 	flag.Uint64Var(&delayInMillis, "d", delayInMillis, "Time granularity for checking files, in milliseconds")
 	flag.BoolVar(&realFilesOnly, "r", realFilesOnly, "Show only real files, i.e. no pipes, sockets, etc.")
-	flag.BoolVar(&lookupHostnames, "l", lookupHostnames, "Turn on hostname lookup (default is a \""+EmptyValue+"\"")
+	flag.BoolVar(&lookupHostnames, "l", lookupHostnames, "Turn on hostname lookup (otherwise is a \""+EmptyValue+"\")")
 	flag.BoolVar(&jsonOut, "j", jsonOut, "Output json (complete json per line)")
 
 	initCache()
@@ -73,7 +72,8 @@ func main() {
 	handleParameters()
 
 	if len(flag.Args()) != 1 {
-		log.Println(flag.Args())
+		//log.Println(flag.Args())
+		flag.Usage()
 		return
 	}
 	pid := flag.Args()[0]
