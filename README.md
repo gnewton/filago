@@ -53,7 +53,7 @@ timestamp [open|close] path tcp ip:port fqhn
 Hostnames are looked-up and cached.
 
 
-Sample output on firefox, hostname lookup turned on:
+Sample output on Firefox, hostname lookup turned on:
 
 ```
 $ ./filago 2262
@@ -130,7 +130,7 @@ $ ./filago 2262
 2017-05-07T12:42:35.155006-04:00 open socket:[1630691] tcp 172.217.6.229:443 lga25s55-in-f5.1e100.net.
 ```
 
-Only real files:
+Only real files, Firefox process:
 ```
 $ ./filago -r 2262
 2017-05-07T12:44:41.405442-04:00 open /home/bsmith/install/firefox/omni.ja
@@ -168,7 +168,7 @@ $ ./filago -r 2262
 2017-05-07T12:44:41.405442-04:00 open /home/bsmith/.cache/event-sound-cache.tdb.9bf539dba0e34f7aaf456bd844b6826e.x86_64-redhat-linux-gnu
 ```
 
-## json output with hostnames looked up:
+## json output with hostnames looked up, Firefox process:
 ```
 $ ./filago -l -j 3737
 {"filename":"socket:[95066]","type":"unix","socket_info":{"unix_socket":{"num":"ffff8803e6c99f80","refcount":"00000003","protocol":"00000000","flags":"00000000","type":"0001","st":"03","inode":95066}},"status":"open","mod_time":"1969-12-31T19:00:00-05:00"}
