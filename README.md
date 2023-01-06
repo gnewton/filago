@@ -6,6 +6,7 @@ Stop running when target process ends.
 This includes tcp and unix sockets.
 
 *Only works on Linux*
+X
 
 
 # Building
